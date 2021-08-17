@@ -16,6 +16,9 @@
         "url": "https://github.com/Microsoft/BotBuilder-Samples.git"
     },
     "dependencies": {
+        "@tensorflow-models/knn-classifier": "^1.2.2",
+        "@tensorflow-models/mobilenet": "^2.1.0",
+        "@tensorflow/tfjs": "^3.8.0",
         "botbuilder": "~4.11.1",
         "botbuilder-ai": "~4.11.1",
         "botbuilder-dialogs": "~4.11.1",
