@@ -99,6 +99,9 @@ class QnABot extends ActivityHandler {
                       //確認
                      // console.log( base64_data );
                      console.log("いいいいい");
+                    
+                     
+
                         var m = new Uint8ClampedArray(content);
 
                        // var myimg = {data: new Uint32Array(content), width: sceneNode.globalBounds.width, height: sceneNode.globalBounds.height};
@@ -110,8 +113,6 @@ class QnABot extends ActivityHandler {
                 
                      //   myimg.src=base64_data;
         
-        
-        
                         const knnClassifier =require("@tensorflow-models/knn-classifier");
                         const mobilenet =require("@tensorflow-models/mobilenet");
                         const classifier = knnClassifier.create();
@@ -122,45 +123,52 @@ class QnABot extends ActivityHandler {
                         let currentStream;
             
                         async function app() {
-                        console.log('Loading mobilenet..');
-                        const asyncFunction = (v) => new Promise((_, r) => setTimeout(() => r(v), 100));
-                        /*const net = async () => {
-                            try {
-                                asyncFunction(await mobilenet.load());
-                            } catch (e) {
-                                console.error('ああああああああ',e);
-                            }
-                        }*/
-                        // Load the model.
-                        net = await mobilenet.load();
-        
-                        ///////////////////////////////////
+                            console.log('Loading mobilenet..');
+                            const asyncFunction = (v) => new Promise((_, r) => setTimeout(() => r(v), 100));
+                            /*const net = async () => {
+                                try {
+                                    asyncFunction(await mobilenet.load());
+                                } catch (e) {
+                                    console.error('ああああああああ',e);
+                                }
+                            }*/
+                            // Load the model.
+                            net = await mobilenet.load();
+                          
+                            
             
-                        console.log('Loading model.json..');
-        
-                        const data =fs.readFileSync('./images/model1.json','utf8');
-                        console.log ('model data: ',data.JSON);
-                        console.log ('model data: ',data.toString);
+                            ///////////////////////////////////
+                
+                            console.log('Loading model.json..');
+            
+                            const data =fs.readFileSync('./images/model1.json','utf8');
+                            console.log ('model data: ',data.JSON);
+                            console.log ('model data: ',data.toString);
+                            
+                                  var tensorObj = JSON.parse(data);
+                            
+                                  Object.keys(tensorObj).forEach((key) => {
+                                  tensorObj[key] = tf.tensor(tensorObj[key], [tensorObj[key].length / 1024, 1024]);
+                                  })
+                                  classifier.setClassifierDataset(tensorObj);
+                             
+                                  console.log('Loading model.json..ok');
+    
+                                 // const img = processImage(imgfilepath);
+                                 // const imgTf = tf.fromPixels(img);
+                                  const activation = net.infer(  myimg, 'conv_preds');
+                                // const inferLocal = () => net.infer(imgTf, "conv_preds");
+                                  // Get the most likely class and confidence from the classifier module.
+                                  const result = await classifier.predictClass(activation);
+                                  console.log(result);
+                                }
+                                app();
+                              }
+                          
+                            //end
+                            
                         
-                              var tensorObj = JSON.parse(data);
-                        
-                              Object.keys(tensorObj).forEach((key) => {
-                              tensorObj[key] = tf.tensor(tensorObj[key], [tensorObj[key].length / 1024, 1024]);
-                              })
-                              classifier.setClassifierDataset(tensorObj);
-                         
-                              console.log('Loading model.json..ok');
-        
-                              const activation = net.infer(  myimg, 'conv_preds');
-                              // Get the most likely class and confidence from the classifier module.
-                              const result = await classifier.predictClass(activation);
-                              console.log(result);
-                            }
-                            app();
-                        //end
-
-                    }
-                    });
+                        });
 
 
 
