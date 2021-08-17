@@ -8,6 +8,7 @@ const { QnAMaker } = require('botbuilder-ai');
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
+const { image } = require('@tensorflow/tfjs');
 
 //---------------------------------------------------------------終-------------------------------------------------------------------------
 /**
@@ -75,6 +76,8 @@ class QnABot extends ActivityHandler {
         const promises = turnContext.activity.attachments.map(this.downloadAttachmentAndWrite);
         const successfulSaves = await Promise.all(promises);
 
+       // var base64_data ;
+
         // Replies back to the user with information about where the attachment is stored on the bot's server,
         // and what the name of the saved file is.
         async function replyForReceivedAttachments(localAttachmentData) {
@@ -85,24 +88,75 @@ class QnABot extends ActivityHandler {
                     `ファイルの保存先: "${ localAttachmentData.localPath }"`);
 
                     const imgfilepath = localAttachmentData.localPath;
+                    console.log(imgfilepath);
                     fs.readFile(imgfilepath, function( err, content ) {
                     if( err ) {
                       console.error(err);
                     }
                     else {
                       /* Base64変換 */
-                      const base64_data = "data:image/jpeg;base64," + content.toString( 'base64' );
+                    const  base64_data = "data:image/jpeg;base64," + content.toString( 'base64' );
                       //確認
-                    //  console.log( base64_data );
+                     // console.log( base64_data );
+                     console.log("いいいいい");
+                        var m = new Uint8ClampedArray(content);
 
+                       // var myimg = {data: new Uint32Array(content), width: sceneNode.globalBounds.width, height: sceneNode.globalBounds.height};
+                      //  console.log(m);
+                        var myimg =new ImageData(m, 1000,1000);
+                     //   console.log(tes);
 
                         //Tensorflowの画像分類処理
-                        //----------------------------------------------------------------------------------------
-                        //----------------------------------------------------------------------------------------
-                        //----------------------------------------------------------------------------------------
-                        //----------------------------------------------------------------------------------------
-                        //----------------------------------------------------------------------------------------
-                        //----------------------------------------------------------------------------------------
+                
+                     //   myimg.src=base64_data;
+        
+        
+        
+                        const knnClassifier =require("@tensorflow-models/knn-classifier");
+                        const mobilenet =require("@tensorflow-models/mobilenet");
+                        const classifier = knnClassifier.create();
+                        const tf = require("@tensorflow/tfjs");
+                        console.log("aaaaa");
+                        let net;
+                        let cv = 0;
+                        let currentStream;
+            
+                        async function app() {
+                        console.log('Loading mobilenet..');
+                        const asyncFunction = (v) => new Promise((_, r) => setTimeout(() => r(v), 100));
+                        /*const net = async () => {
+                            try {
+                                asyncFunction(await mobilenet.load());
+                            } catch (e) {
+                                console.error('ああああああああ',e);
+                            }
+                        }*/
+                        // Load the model.
+                        net = await mobilenet.load();
+        
+                        ///////////////////////////////////
+            
+                        console.log('Loading model.json..');
+        
+                        const data =fs.readFileSync('./images/model1.json','utf8');
+                        console.log ('model data: ',data.JSON);
+                        console.log ('model data: ',data.toString);
+                        
+                              var tensorObj = JSON.parse(data);
+                        
+                              Object.keys(tensorObj).forEach((key) => {
+                              tensorObj[key] = tf.tensor(tensorObj[key], [tensorObj[key].length / 1024, 1024]);
+                              })
+                              classifier.setClassifierDataset(tensorObj);
+                         
+                              console.log('Loading model.json..ok');
+        
+                              const activation = net.infer(  myimg, 'conv_preds');
+                              // Get the most likely class and confidence from the classifier module.
+                              const result = await classifier.predictClass(activation);
+                              console.log(result);
+                            }
+                            app();
                         //end
 
                     }
@@ -182,14 +236,19 @@ class QnABot extends ActivityHandler {
             const response = await axios.get(url, { responseType: 'arraybuffer' });
             // If user uploads JSON file, this prevents it from being written as "{"type":"Buffer","data":[123,13,10,32,32,34,108..."
             if (response.headers['content-type'] === 'application/json') {
-               // const hex = Buffer.from(response.data).toString("base64");
-               // console.log(hex);
                 response.data = JSON.parse(response.data, (key, value) => {
-                    return value && value.type === 'Buffer' ? Buffer.from(value.data) : value;                    
+                   // return value && value.type === 'Buffer' ? Buffer.from(value.data) : value;  
+                    return   Buffer.from(value.data);
                     });
-                
                 }
+
+
+
+
+
+            //console.log(response.data);
             //一時的に画像をlocalに保存
+            
             fs.writeFile(localFileName, response.data, (fsError) => {
                 if (fsError) {
                     throw fsError;
