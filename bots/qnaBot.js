@@ -1,14 +1,23 @@
 // Copyright（c）MicrosoftCorporation。 全著作権所有。
 // MITライセンスの下でライセンスされています。 
 
-const { ActivityHandler, ActionTypes, ActivityTypes, CardFactory, TurnContext } = require('botbuilder');
+const { ActivityHandler} = require('botbuilder');
 //-------------------------------------------------------------追加部分-----------------------------------------------------------------------
 const { QnAMaker } = require('botbuilder-ai');
 
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
-const { image } = require('@tensorflow/tfjs');
+
+//const tf = require("@tensorflow/tfjs");
+const tf = require("@tensorflow/tfjs-node");
+
+//require("@tensorflow/tfjs-node");
+
+const knnClassifier =require("@tensorflow-models/knn-classifier");
+const mobilenet =require("@tensorflow-models/mobilenet");
+
+var msg="";
 
 //---------------------------------------------------------------終-------------------------------------------------------------------------
 /**
@@ -65,6 +74,7 @@ class QnABot extends ActivityHandler {
         });
     }
 
+    
     /**
      * Saves incoming attachments to disk by calling `this.downloadAttachmentAndWrite()` and
      * responds to the user with information about the saved attachment or an error.
@@ -76,99 +86,30 @@ class QnABot extends ActivityHandler {
         const promises = turnContext.activity.attachments.map(this.downloadAttachmentAndWrite);
         const successfulSaves = await Promise.all(promises);
 
-       // var base64_data ;
-
         // Replies back to the user with information about where the attachment is stored on the bot's server,
         // and what the name of the saved file is.
         async function replyForReceivedAttachments(localAttachmentData) {
+
             if (localAttachmentData) {
                 // Because the TurnContext was bound to this function, the bot can call
                 // `TurnContext.sendActivity` via `this.sendActivity`;
-                await this.sendActivity(`ファイル名: "${ localAttachmentData.fileName }" \r\n ` +
-                    `ファイルの保存先: "${ localAttachmentData.localPath }"`);
+            //  await this.sendActivity(`ファイル名: "${ localAttachmentData.fileName }" \r\n ` +
+            //        `ファイルの保存先: "${ localAttachmentData.localPath }"`);
 
                     const imgfilepath = localAttachmentData.localPath;
                     console.log(imgfilepath);
-                    fs.readFile(imgfilepath, function( err, content ) {
-                    if( err ) {
-                      console.error(err);
-                    }
-                    else {
-                      /* Base64変換 */
-                    const  base64_data = "data:image/jpeg;base64," + content.toString( 'base64' );
+                    //fs.readFile(imgfilepath, function( err, content ) {
+                   // if( err ) {
+                    //  console.error(err);
+                    //}
+                    //else {
+                     /* Base64変換 */
+                     // const  base64_data = "data:image/jpeg;base64," + content.toString( 'base64' );
                       //確認
                      // console.log( base64_data );
-                     console.log("いいいいい");
-                    
-                     
+                   // }
 
-                        var m = new Uint8ClampedArray(content);
-
-                       // var myimg = {data: new Uint32Array(content), width: sceneNode.globalBounds.width, height: sceneNode.globalBounds.height};
-                      //  console.log(m);
-                        var myimg =new ImageData(m, 1000,1000);
-                     //   console.log(tes);
-
-                        //Tensorflowの画像分類処理
-                
-                     //   myimg.src=base64_data;
-        
-                        const knnClassifier =require("@tensorflow-models/knn-classifier");
-                        const mobilenet =require("@tensorflow-models/mobilenet");
-                        const classifier = knnClassifier.create();
-                        const tf = require("@tensorflow/tfjs");
-                        console.log("aaaaa");
-                        let net;
-                        let cv = 0;
-                        let currentStream;
-            
-                        async function app() {
-                            console.log('Loading mobilenet..');
-                            const asyncFunction = (v) => new Promise((_, r) => setTimeout(() => r(v), 100));
-                            /*const net = async () => {
-                                try {
-                                    asyncFunction(await mobilenet.load());
-                                } catch (e) {
-                                    console.error('ああああああああ',e);
-                                }
-                            }*/
-                            // Load the model.
-                            net = await mobilenet.load();
-                          
-                            
-            
-                            ///////////////////////////////////
-                
-                            console.log('Loading model.json..');
-            
-                            const data =fs.readFileSync('./images/model1.json','utf8');
-                            console.log ('model data: ',data.JSON);
-                            console.log ('model data: ',data.toString);
-                            
-                                  var tensorObj = JSON.parse(data);
-                            
-                                  Object.keys(tensorObj).forEach((key) => {
-                                  tensorObj[key] = tf.tensor(tensorObj[key], [tensorObj[key].length / 1024, 1024]);
-                                  })
-                                  classifier.setClassifierDataset(tensorObj);
-                             
-                                  console.log('Loading model.json..ok');
-    
-                                 // const img = processImage(imgfilepath);
-                                 // const imgTf = tf.fromPixels(img);
-                                  const activation = net.infer(  myimg, 'conv_preds');
-                                // const inferLocal = () => net.infer(imgTf, "conv_preds");
-                                  // Get the most likely class and confidence from the classifier module.
-                                  const result = await classifier.predictClass(activation);
-                                  console.log(result);
-                                }
-                                app();
-                              }
-                          
-                            //end
-                            
-                        
-                        });
+                      //  });
 
 
 
@@ -188,7 +129,7 @@ class QnABot extends ActivityHandler {
                                 console.log('Calling QnA Maker...');
 
                                 //質問を分類した物の名前に変換
-                                turnContext.activity.text = "びん"; //=>画像分類名代入
+                                turnContext.activity.text = msg; //=>画像分類名代入
                                                             
                                 //QnAMakerへ検索
                                 const qnaResults = await QnABot.qnaMaker.getAnswers(turnContext);　
@@ -209,23 +150,25 @@ class QnABot extends ActivityHandler {
 
 
                     //画像削除
-                    fs.unlink(imgfilepath, (err) => {
-                        if (err) throw err;
-                        console.log('削除しました。');
-                      });
+              //      fs.unlink(imgfilepath, (err) => {
+                //        if (err) throw err;
+                //        console.log('削除しました。');
+               //       });
 
-                      await this.sendActivity("ファイルを削除しました。");
+                    //  await this.sendActivity("ファイルを削除しました。");
 
             } else {
                 await this.sendActivity('添付ファイルがディスクに正常に保存されませんでした。');
             }
         }
 
+
+
+        
         // Prepare Promises to reply to the user with information about saved attachments.
         // The current TurnContext is bound so `replyForReceivedAttachments` can also send replies.
         const replyPromises = successfulSaves.map(replyForReceivedAttachments.bind(turnContext));
         await Promise.all(replyPromises);
-
     }
 
 
@@ -249,19 +192,63 @@ class QnABot extends ActivityHandler {
                     return   Buffer.from(value.data);
                     });
                 }
-
-
-
-
-
-            //console.log(response.data);
-            //一時的に画像をlocalに保存
+                   
+                        const classifier = knnClassifier.create();
+                  
+                        let net;
+                        let cv = 0;
+                        let currentStream;
             
-            fs.writeFile(localFileName, response.data, (fsError) => {
-                if (fsError) {
-                    throw fsError;
-                    }
-                });
+                        async function app() {
+                            console.log('Loading mobilenet..');
+                            const asyncFunction = (v) => new Promise((_, r) => setTimeout(() => r(v), 100));
+
+                            // Load the model.
+                            net = await mobilenet.load();
+                          
+                            ///////////////////////////////////
+                
+                            console.log('Loading model.json..');
+            
+                            const data =fs.readFileSync('./images/model1.json','utf8');
+                            console.log ('model data: ',data.JSON);
+                            console.log ('model data: ',data.toString);
+                            
+                                  var tensorObj = JSON.parse(data);
+                            
+                                  Object.keys(tensorObj).forEach((key) => {
+                                  tensorObj[key] = tf.tensor(tensorObj[key], [tensorObj[key].length / 1024, 1024]);
+                                  })
+                                  classifier.setClassifierDataset(tensorObj);
+                             
+                                  console.log('Loading model.json..ok');
+                                    
+
+                                const mgt =tf.node.decodeImage(new Uint8Array( response.data), 3);
+                                const activation = net.infer(mgt, 'conv_preds',true);
+
+                              //  const img = processImage(base64_data);
+
+
+                                //  const imgTf = tf.browser.fromPixels(img);//tf.browser.fromPixels
+                                 //const activation = net.infer( img, 'conv_preds');
+                             //    const activation = net.infer( img, 'conv_preds');
+
+                              //   const inferLocal = () => net.infer(imgTf, "conv_preds");
+                                  // Get the most likely class and confidence from the classifier module.
+                                  const result = await classifier.predictClass(activation);
+
+                                  const classes =["000000000","乾電池","ビン","ペットボトル"];
+                              
+
+                                  msg = classes[result.label];
+
+                             console.log('result--------------3',msg);
+                        }
+                             await  app();
+
+
+
 
         } catch (error) {
                 console.error(error);
