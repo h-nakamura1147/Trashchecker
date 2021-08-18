@@ -1,13 +1,13 @@
-// Copyright（c）MicrosoftCorporation。無断転載を禁じます。
-// MITライセンスの下でライセンスされています。
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 const { CardFactory, ActionTypes } = require('botbuilder');
 
 class QnACardBuilder {
     /**
-    * マルチターンプロンプトカードを入手。
-    * @param {QnAMakerResult} result プロンプトとして表示される結果。
-    * @param {string} cardNoMatchText 一致するテキストがない。
+    * Get multi-turn prompts card.
+    * @param {QnAMakerResult} result Result to be dispalyed as prompts.
+    * @param {string} cardNoMatchText No match text.
     */
     static GetQnAPromptsCard(result) {
         var cardActions = [];
@@ -24,10 +24,10 @@ class QnACardBuilder {
     }
 
     /**
-    * 質問ヒーローカードを入手して、ユーザーからのフィードバックを入手。
-    * @param {Array} suggestionList  質問された文字列のリスト。
-    * @param {string} cardTitle カードのタイトル。
-    * @param {string} cardNoMatchText 一致するテキストがない
+    * Get suggestion hero card to get user feedback.
+    * @param {Array} suggestionList A list of suggested questions strings.
+    * @param {string} cardTitle Title of the card.
+    * @param {string} cardNoMatchText No match text.
     */
     static GetSuggestionCard(suggestionList, cardTitle, cardNoMatchText) {
         var cardActions = [];

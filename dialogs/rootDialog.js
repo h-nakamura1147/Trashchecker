@@ -1,5 +1,6 @@
-// Copyright（c）MicrosoftCorporation。無断転載を禁じます。
-// MITライセンスの下でライセンスされています。
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 const {
     ComponentDialog,
     DialogSet,
@@ -17,12 +18,12 @@ const QNAMAKER_BASE_DIALOG = 'qnamaker-base-dailog';
 
 class RootDialog extends ComponentDialog {
     /**
-     * このボットのルートダイアログ。
-     * @param {QnAMaker} qnaService QnAMakerサービスオブジェクト。
+     * Root dialog for this bot.
+     * @param {QnAMaker} qnaService A QnAMaker service object.
      */
     constructor(knowledgebaseId, authkey, host) {
         super(ROOT_DIALOG);
-        //最初のウォーターフォールダイアログ。
+        // Initial waterfall dialog.
         this.addDialog(new WaterfallDialog(INITIAL_DIALOG, [
             this.startInitialDialog.bind(this)
         ]));
@@ -31,8 +32,8 @@ class RootDialog extends ComponentDialog {
     }
 
     /**
-     *runメソッドは、着信アクティビティ（TurnContextの形式）を処理し、それをダイアログシステムに渡します。
-     *アクティブなダイアログがない場合は、デフォルトのダイアログが開始されます。
+     * The run method handles the incoming activity (in the form of a TurnContext) and passes it through the dialog system.
+     * If no dialog is active, it will start the default dialog.
      * @param {*} turnContext
      * @param {*} accessor
      */
@@ -47,8 +48,8 @@ class RootDialog extends ComponentDialog {
         }
     }
 
-    //これはWaterfallDialogの最初のステップです。
-    //提供されたオプションを使用してQnAMakerとのダイアログを開始します。
+    // This is the first step of the WaterfallDialog.
+    // It kicks off the dialog with the QnA Maker with provided options.
     async startInitialDialog(step) {
         return await step.beginDialog(QNAMAKER_BASE_DIALOG);
     }

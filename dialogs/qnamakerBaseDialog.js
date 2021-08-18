@@ -1,5 +1,6 @@
-// Copyright（c）MicrosoftCorporation。無断転載を禁じます。
-// MITライセンスの下でライセンスされています。
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 const {
     QnAMakerDialog
 } = require('botbuilder-ai');
@@ -8,23 +9,23 @@ const {
     ActivityFactory
 } = require('botbuilder-core');
 
-//デフォルトのパラメータ
+// Default parameters
 const DefaultThreshold = 0.3;
 const DefaultTopN = 3;
 const DefaultNoAnswer = 'No QnAMaker answers found.';
 
-//カードのパラメータ
+// Card parameters
 const DefaultCardTitle = 'Did you mean:';
 const DefaultCardNoMatchText = 'None of the above.';
 const DefaultCardNoMatchResponse = 'Thanks for the feedback.';
 
-// QnA Makerのダイアログ
+/// QnA Maker dialog.
 const QNAMAKER_BASE_DIALOG = 'qnamaker-base-dailog';
 
 class QnAMakerBaseDialog extends QnAMakerDialog {
     /**
-     * QnAMakerダイアログのコアロジック。
-     * @param {QnAMaker} qnaService QnAMakerサービスオブジェクト。
+     * Core logic of QnA Maker dialog.
+     * @param {QnAMaker} qnaService A QnAMaker service object.
      */
     constructor(knowledgebaseId, authkey, host) {
         var noAnswer = ActivityFactory.DefaultNoAnswer;
