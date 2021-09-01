@@ -106,7 +106,6 @@ class QnABot extends ActivityHandler {
         } else {
             //新しいメッセージActivityでQnAMakerに検索して返答する。
             if(cnt > 1){
-            /////////////////////////
             var str = context.activity.text;
             //日本語訳するコード
             if (!(lang === 'ja')) {
@@ -283,7 +282,7 @@ class QnABot extends ActivityHandler {
                     } catch (err) {
                         console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
                     }                               
-                    var picmsg1 = "画像を認識しました。";
+               //   var picmsg1 = "画像を認識しました。";
                     var picmsg2 = '"';
                     var picmsg3 = '"';
 
@@ -296,9 +295,9 @@ class QnABot extends ActivityHandler {
                                         'api-version': '3.0',
                                         'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
                                     }
-                                    const body1 = [{
+                                /*    const body1 = [{
                                         'text': picmsg1
-                                    }]
+                                    }]*/
                                     const body2 = [{
                                         'text': picmsg2
                                     }]
@@ -308,21 +307,21 @@ class QnABot extends ActivityHandler {
                                     const body4 = [{
                                         'text': msg
                                     }]                                                    
-                                    var result1 = await trans.translatorAPI(qs, body1);
+                                //    var result1 = await trans.translatorAPI(qs, body1);
                                     var result2 = await trans.translatorAPI(qs, body2);
                                     var result3 = await trans.translatorAPI(qs, body3);
                                     var result4 = await trans.translatorAPI(qs, body4);
-                                    picmsg1 = result1[0].translations[0].text;
+                                //    picmsg1 = result1[0].translations[0].text;
                                     picmsg2 = result2[0].translations[0].text;
                                     picmsg3 = result3[0].translations[0].text;
                                 var picmsg4 = result4[0].translations[0].text;
                                     await this.sendActivity(picmsg1 + "\r\n" + picmsg2 + picmsg4 + picmsg3);
                                 }else if(lang ==='ja'){
                                 //初期化
-                                 picmsg1 = "画像を認識しました。";
+                                // picmsg1 = "画像を認識しました。";
                                  picmsg2 = "「";
                                  picmsg3 = "」";
-                                await this.sendActivity(picmsg1 + "\r\n" + picmsg2 + msg + picmsg3);
+                                await this.sendActivity(picmsg2 + msg + picmsg3);
                                 }
 
     if(!(lang === 'ja')){
@@ -437,7 +436,7 @@ class QnABot extends ActivityHandler {
 
                                   const result = await classifier.predictClass(activation);
 
-                                  const classes =["000000000","乾電池","ビン","ペットボトル"];
+                                  const classes =["該当なし","乾電池","ビン","ペットボトル"];
                               
 
                                   msg = classes[result.label];
