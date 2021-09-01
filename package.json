@@ -26,6 +26,7 @@
         "dotenv": "^8.2.0",
         "fs": "0.0.1-security",
         "path": "^0.12.7",
+        "request": "^2.88.2",
         "restify": "^8.5.1"
     },
     "devDependencies": {

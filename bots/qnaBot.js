@@ -1,24 +1,21 @@
 // Copyright（c）MicrosoftCorporation。 全著作権所有。
 // MITライセンスの下でライセンスされています。 
-
-const { ActivityHandler} = require('botbuilder');
-//-------------------------------------------------------------追加部分-----------------------------------------------------------------------
+//-------------------------------------------------------------宣言-----------------------------------------------------------------------
+const { ActivityHandler,ActionTypes,MessageFactory} = require('botbuilder');
 const { QnAMaker } = require('botbuilder-ai');
-
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
-
-//const tf = require("@tensorflow/tfjs");
 const tf = require("@tensorflow/tfjs-node");
-
-//require("@tensorflow/tfjs-node");
-
 const knnClassifier =require("@tensorflow-models/knn-classifier");
 const mobilenet =require("@tensorflow-models/mobilenet");
-
 var msg="";
-
+//翻訳系
+const {Translator}  = require('../TranslatorClass');
+trans = new Translator();
+var cnt = 0;
+var Language = "";
+var lang = "";
 //---------------------------------------------------------------終-------------------------------------------------------------------------
 /**
   * QnAMakerからの回答で発話に応答するシンプルなボット。
@@ -44,8 +41,52 @@ class QnABot extends ActivityHandler {
         this.dialogState = this.conversationState.createProperty('DialogState');
 
         this.onMessage(async (context, next) => {
-            console.log('メッセージアクティビティを含むダイアログの実行');
-            console.log('送信した言葉　= '+context.activity.text);
+
+            const currentLang = context.activity.text;
+            console.log("----------------------------------------------------------------------------------");
+            if(cnt == 0){
+            console.log("currentLang : "+currentLang);
+            if(currentLang === "en" ){ lang= "en",Language="英語"}//英語
+            else if(currentLang ==="pt"){lang ="pt",Language="ポルトガル語"}//ポルトガル語
+            else if(currentLang ==="ja"){lang = "ja",Language="日本語"}//日本語
+            else {lang = "ja",Language="日本語";}
+            var start1 = Language + "に設定しました。";
+            var start2　= "捨てたいゴミを名前か写真で教えてください。";
+
+                //日本語じゃない場合
+            if (!(lang === 'ja')) {
+
+                const qs = {
+                    'api-version': '3.0',
+                    'to': [lang]   //ポルトガル語、英語の中から選択した言語に翻訳
+                }
+                const body = [{
+                    'text': start1
+                }]                                
+                var result = await trans.translatorAPI(qs, body)
+                var wel1 = result[0].translations[0].text;
+
+                const qs2 = {
+                    'api-version': '3.0',
+                    'to': [lang]   //ポルトガル語、英語の中から選択した言語に翻訳
+                }
+                const body2 = [{
+                    'text': start2
+                }]                                
+                var result2 = await trans.translatorAPI(qs2, body2)
+                var wel2 = result2[0].translations[0].text;
+
+                console.log("Language Set...");
+                await context.sendActivity(wel1 +"\r\n"+ wel2); 
+
+            }else if(lang === 'ja'){
+                //日本語の場合
+                    context.sendActivity(Language+"に設定しました。\r\n 捨てたいゴミを名前か写真で教えてください。");
+            }
+            cnt = cnt+1;
+            //console.log(cnt);
+            }
+            console.log("lang : "+lang);
 
 
         // 添付ファイルを確認して、ボットがメッセージを処理する方法を決定します。
@@ -53,9 +94,100 @@ class QnABot extends ActivityHandler {
         // ユーザーは添付ファイルを送信し、ボットは受信した添付ファイルを処理する必要があります。
         await this.handleIncomingAttachment(context);
         } else {
-            //新しいメッセージActivityでダイアログを実行します
-            await this.dialog.run(context, this.dialogState);
+            //新しいメッセージActivityでQnAMakerに検索して返答する。
+            if(cnt > 1){
+             ////////////////////////   
+            // await this.dialog.run(context, this.dialogState);   
+            /////////////////////////
+
+            var str = JSON.stringify(context.activity.text);
+            //日本語訳するコード
+            if (!(lang === 'ja')) {
+                const qs = {
+                    'api-version': '3.0',
+                    'to': ['ja']   //ポルトガル語、英語の中から選択した言語に翻訳
+                }
+                const body = [{
+                    'text': str
+                }]
+                var result = await trans.translatorAPI(qs, body);
+                //日本語翻訳確認          
+                console.log("入力 : "+str+"　⇒　変換後 : "+result[0].translations[0].text);
+                //翻訳結果の代入
+                context.activity.text　= result[0].translations[0].text;
+            } else if(lang === 'ja') {
+                console.log('設定:日本語');
+           }
+
+
+
+            try {
+                QnABot.qnaMaker = new QnAMaker({
+                    knowledgeBaseId: process.env.QnAKnowledgebaseId,
+                    endpointKey: process.env.QnAAuthKey,
+                    host: 'https://' + process.env.QnAEndpointHostName + '/qnamaker'
+                });
+            } catch (err) {
+                console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
             }
+
+                        
+            console.log('Calling QnA Maker...');
+                                                    
+            //QnAMakerへ検索
+            const qnaResults = await QnABot.qnaMaker.getAnswers(context);
+            try {
+                //json⇒string
+                //var str = JSON.stringify(qnaResults[0].answer);
+                var str = qnaResults[0].answer;
+            }catch(e){
+                console.error("No QnA Maker answers were found.");            
+                var NoAns = "ごめんなさい。分かりませんでした。";
+
+                    if(lang === 'ja'){
+                        context.sendActivity(NoAns);
+                    }else if(!(lang === 'ja')){
+                            
+                    const qs = {
+                        'api-version': '3.0',
+                        'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                    }
+                    const body = [{
+                        'text': NoAns
+                    }]
+                                                
+                    var result = await trans.translatorAPI(qs, body);
+                    await context.sendActivity(result[0].translations[0].text);
+                    }
+
+            }
+            // ユーザーへ検索結果を翻訳して返信
+             if (qnaResults[0]) {
+                if (!(lang === 'ja')) {            
+                const qs = {
+                    'api-version': '3.0',
+                    'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                }
+                const body = [{
+                    'text': str
+                }]
+                                
+                var result = await trans.translatorAPI(qs, body)
+                console.log("Translator...");
+                console.log("----------------------------------------------------------------------------------");
+                await context.sendActivity(result[0].translations[0].text); 
+
+                }else if(lang === 'ja'){
+                    context.sendActivity(str);
+                }                
+                //    console.dir(result[0]);  
+                //result[0].translations[0].text   翻訳結果
+            }
+
+        }
+        cnt = cnt+1;
+    }
+
            // next（）を呼び出すことにより、次のBotHandlerが実行されるようにします。
             await next();
         });
@@ -65,10 +197,32 @@ class QnABot extends ActivityHandler {
             const membersAdded = context.activity.membersAdded;
             for (let cnt = 0; cnt < membersAdded.length; cnt++) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
-                    await context.sendActivity('ようこそ！捨てたいゴミを名前か写真で教えてね！');
+                    await context.sendActivity('トラッシュチェッカーへようこそ！');
                 }
             }
 
+            //言語選択
+            const cardActions = [
+                {
+                     type: ActionTypes.PostBack,
+                     title: 'português', //ポルトガル語
+                     value: 'pt'
+                 },
+                 {
+                     type: ActionTypes.PostBack,
+                     title: 'English', //英語
+                     value: 'en'
+                 },
+                 {
+                     type: ActionTypes.PostBack,
+                     title: '日本語',  //日本語
+                     value: 'ja'                    
+                 }
+             ];
+             const reply = MessageFactory.suggestedActions(cardActions, '以下から使用する言語をお選びください。');
+             await context.sendActivity(reply);
+             //初期化
+             cnt = 0;
            // next（）を呼び出すことにより、次のBotHandlerが実行されるようにします。
             await next();
         });
@@ -89,7 +243,7 @@ class QnABot extends ActivityHandler {
         // Replies back to the user with information about where the attachment is stored on the bot's server,
         // and what the name of the saved file is.
         async function replyForReceivedAttachments(localAttachmentData) {
-
+            
             if (localAttachmentData) {
                 // Because the TurnContext was bound to this function, the bot can call
                 // `TurnContext.sendActivity` via `this.sendActivity`;
@@ -134,15 +288,32 @@ class QnABot extends ActivityHandler {
                                 //QnAMakerへ検索
                                 const qnaResults = await QnABot.qnaMaker.getAnswers(turnContext);　
                                                                             
-                                //turnContext中身表示
-                                //console.log(turnContext);
                                                             
-                                //検索結果
-                                //console.log(qnaResults[0].answer); 
-                                                            
+                                //json⇒string
+                                var str = qnaResults[0].answer;
+                                
+                                
                                 // ユーザーへ検索結果を返信
                                 if (qnaResults[0]) {
-                                    await this.sendActivity(qnaResults[0].answer);　
+                                
+                                    if (!(lang === 'ja')) {            
+                                        const qs = {
+                                            'api-version': '3.0',
+                                            'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                                        }
+                                        const body = [{
+                                            'text': str
+                                        }]
+                                                        
+                                        var result = await trans.translatorAPI(qs, body)
+                                        console.log("Translator...");
+                                        console.log("----------------------------------------------------------------------------------");
+                                        await this.sendActivity(result[0].translations[0].text); 
+                        
+                                    }else if(lang === 'ja'){
+                                            this.sendActivity(str);
+                                    }
+                                
                                 } else {
                                     await this.sendActivity('No QnA Maker answers were found.');
                                 }
@@ -156,7 +327,7 @@ class QnABot extends ActivityHandler {
                //       });
 
                     //  await this.sendActivity("ファイルを削除しました。");
-
+         console.log("----------------------------------------------------------------------------------");
             } else {
                 await this.sendActivity('添付ファイルがディスクに正常に保存されませんでした。');
             }
@@ -271,7 +442,6 @@ class QnABot extends ActivityHandler {
     */
     async run(context) {
         await super.run(context);
-       // console.log(context);
         //状態の変化を保存します。 ダイアログの実行中にロードが発生しました。
         await this.conversationState.saveChanges(context, false);
         await this.userState.saveChanges(context, false);
