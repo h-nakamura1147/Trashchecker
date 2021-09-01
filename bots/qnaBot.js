@@ -106,21 +106,7 @@ class QnABot extends ActivityHandler {
         } else {
             //新しいメッセージActivityでQnAMakerに検索して返答する。
             if(cnt > 1){
-             //////////////////////// 
-             
-             
-
-
-
-            // await this.dialog.run(context, this.dialogState);   
-
-
-
-
-
-
             /////////////////////////
-
             var str = context.activity.text;
             //日本語訳するコード
             if (!(lang === 'ja')) {
@@ -340,65 +326,53 @@ class QnABot extends ActivityHandler {
                                 }
 
     if(!(lang === 'ja')){
-                                console.log('Calling QnA Maker...');
-                                //質問を分類した物の名前に変換
-                                turnContext.activity.text = msg; //=>画像分類名代入
+        console.log('Calling QnA Maker...');
+        //質問を分類した物の名前に変換
+        turnContext.activity.text = msg; //=>画像分類名代入
                                                             
-                                //QnAMakerへ検索
-                                const qnaResults = await QnABot.qnaMaker.getAnswers(turnContext);　
+        //QnAMakerへ検索
+        const qnaResults = await QnABot.qnaMaker.getAnswers(turnContext);　
                                                                             
                                                             
-                                //json⇒string
-                                var str = qnaResults[0].answer;
+        //json⇒string
+        var str = qnaResults[0].answer;
                                 
                                 
-                                // ユーザーへ検索結果を返信
-                                if (qnaResults[0]) {
+        // ユーザーへ検索結果を返信
+        if (qnaResults[0]) {
                                 
-                                    if (!(lang === 'ja')) {            
-                                        const qs = {
-                                            'api-version': '3.0',
-                                            'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
-                                        }
-                                        const body = [{
-                                            'text': str
-                                        }]
-                                                        
-                                        var result = await trans.translatorAPI(qs, body)
-                                        console.log("Translator...");
-                                        console.log("----------------------------------------------------------------------------------");
-                                        await this.sendActivity(result[0].translations[0].text); 
-                        
-                                    }
-                                
-                                }else {
-                                    await this.sendActivity('No QnA Maker answers were found.');
-                                }
+            if (!(lang === 'ja')) {            
+                const qs = {
+                    'api-version': '3.0',
+                    'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                }
+                const body = [{
+                    'text': str
+                }]
+                                                            
+                var result = await trans.translatorAPI(qs, body)
+                console.log("Translator...");
+                console.log("----------------------------------------------------------------------------------");
+                await this.sendActivity(result[0].translations[0].text); 
+                            
+                }
+                                    
+            }else {
+                await this.sendActivity('No QnA Maker answers were found.');
+            }
     }else if(lang === 'ja'){
         turnContext.activity.text = msg; //=>画像分類名代入
-////////////デフォルトのQnAダイアログ//////////////////////////////////////////////////////////////////////////////////////////////
+////////////QnAダイアログ/////////////////////////////////////////////////////////////////////////////////////////////////////////
         await Tdialog.run(turnContext, TdialogState); 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-
-
-                    //画像削除
-              //      fs.unlink(imgfilepath, (err) => {
-                //        if (err) throw err;
-                //        console.log('削除しました。');
-               //       });
-
-                    //  await this.sendActivity("ファイルを削除しました。");
          console.log("----------------------------------------------------------------------------------");
             } else {
                 await this.sendActivity('添付ファイルがディスクに正常に保存されませんでした。');
             }
         }
-
-
-
-        
+   
         // Prepare Promises to reply to the user with information about saved attachments.
         // The current TurnContext is bound so `replyForReceivedAttachments` can also send replies.
         const replyPromises = successfulSaves.map(replyForReceivedAttachments.bind(turnContext));
@@ -461,15 +435,6 @@ class QnABot extends ActivityHandler {
                                 const mgt =tf.node.decodeImage(new Uint8Array( response.data), 3);
                                 const activation = net.infer(mgt, 'conv_preds',true);
 
-                              //  const img = processImage(base64_data);
-
-
-                                //  const imgTf = tf.browser.fromPixels(img);//tf.browser.fromPixels
-                                 //const activation = net.infer( img, 'conv_preds');
-                             //    const activation = net.infer( img, 'conv_preds');
-
-                              //   const inferLocal = () => net.infer(imgTf, "conv_preds");
-                                  // Get the most likely class and confidence from the classifier module.
                                   const result = await classifier.predictClass(activation);
 
                                   const classes =["000000000","乾電池","ビン","ペットボトル"];
