@@ -16,6 +16,10 @@ trans = new Translator();
 var cnt = 0;
 var Language = "";
 var lang = "";
+var TconversationState = "";
+var TuserState = "";
+var Tdialog = "";
+var TdialogState = "";
 //---------------------------------------------------------------終-------------------------------------------------------------------------
 /**
   * QnAMakerからの回答で発話に応答するシンプルなボット。
@@ -39,6 +43,12 @@ class QnABot extends ActivityHandler {
         this.userState = userState;
         this.dialog = dialog;
         this.dialogState = this.conversationState.createProperty('DialogState');
+
+        
+        TconversationState = conversationState;
+        TuserState = userState;
+        Tdialog = dialog;
+        TdialogState = this.conversationState.createProperty('DialogState');
 
         this.onMessage(async (context, next) => {
 
@@ -96,11 +106,22 @@ class QnABot extends ActivityHandler {
         } else {
             //新しいメッセージActivityでQnAMakerに検索して返答する。
             if(cnt > 1){
-             ////////////////////////   
+             //////////////////////// 
+             
+             
+
+
+
             // await this.dialog.run(context, this.dialogState);   
+
+
+
+
+
+
             /////////////////////////
 
-            var str = JSON.stringify(context.activity.text);
+            var str = context.activity.text;
             //日本語訳するコード
             if (!(lang === 'ja')) {
                 const qs = {
@@ -115,12 +136,7 @@ class QnABot extends ActivityHandler {
                 console.log("入力 : "+str+"　⇒　変換後 : "+result[0].translations[0].text);
                 //翻訳結果の代入
                 context.activity.text　= result[0].translations[0].text;
-            } else if(lang === 'ja') {
-                console.log('設定:日本語');
-           }
-
-
-
+            }
             try {
                 QnABot.qnaMaker = new QnAMaker({
                     knowledgeBaseId: process.env.QnAKnowledgebaseId,
@@ -129,17 +145,18 @@ class QnABot extends ActivityHandler {
                 });
             } catch (err) {
                 console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
-            }
-
-                        
+            }     
+            
+     if(!(lang === 'ja')){
             console.log('Calling QnA Maker...');
                                                     
             //QnAMakerへ検索
             const qnaResults = await QnABot.qnaMaker.getAnswers(context);
             try {
-                //json⇒string
-                //var str = JSON.stringify(qnaResults[0].answer);
                 var str = qnaResults[0].answer;
+////////////////////////////////////////////////マルチターン回答///////////////////////////////////////////////////////////////////////////////////////////
+                //console.log(qnaResults[0].context.prompts[0]);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             }catch(e){
                 console.error("No QnA Maker answers were found.");            
                 var NoAns = "ごめんなさい。分かりませんでした。";
@@ -177,12 +194,14 @@ class QnABot extends ActivityHandler {
                 console.log("----------------------------------------------------------------------------------");
                 await context.sendActivity(result[0].translations[0].text); 
 
-                }else if(lang === 'ja'){
-                    context.sendActivity(str);
-                }                
-                //    console.dir(result[0]);  
+                }                  
                 //result[0].translations[0].text   翻訳結果
             }
+    }else if(lang === 'ja'){
+////////////デフォルトのQnAダイアログ//////////////////////////////////////////////////////////////////////////////////////////////
+        await this.dialog.run(context, this.dialogState); 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
 
         }
         cnt = cnt+1;
@@ -277,11 +296,51 @@ class QnABot extends ActivityHandler {
                         });
                     } catch (err) {
                         console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
-                    }
+                    }                               
+                    var picmsg1 = "画像を認識しました。";
+                    var picmsg2 = '"';
+                    var picmsg3 = '"';
 
-                                
+
+
+                                //分類結果を返信
+                                if (!(lang === 'ja')) {
+                                    //picmsg翻訳            
+                                    const qs = {
+                                        'api-version': '3.0',
+                                        'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                                    }
+                                    const body1 = [{
+                                        'text': picmsg1
+                                    }]
+                                    const body2 = [{
+                                        'text': picmsg2
+                                    }]
+                                    const body3 = [{
+                                        'text': picmsg3
+                                    }]
+                                    const body4 = [{
+                                        'text': msg
+                                    }]                                                    
+                                    var result1 = await trans.translatorAPI(qs, body1);
+                                    var result2 = await trans.translatorAPI(qs, body2);
+                                    var result3 = await trans.translatorAPI(qs, body3);
+                                    var result4 = await trans.translatorAPI(qs, body4);
+                                    picmsg1 = result1[0].translations[0].text;
+                                    picmsg2 = result2[0].translations[0].text;
+                                    picmsg3 = result3[0].translations[0].text;
+                                var picmsg4 = result4[0].translations[0].text;
+                                    await this.sendActivity(picmsg1 + "\r\n" + picmsg2 + picmsg4 + picmsg3);
+                                }else if(lang ==='ja'){
+                                //初期化
+                                 picmsg1 = "画像を認識しました。";
+                                 picmsg2 = "「";
+                                 picmsg3 = "」";
+                                await this.sendActivity(picmsg1 + "\r\n" + picmsg2 + msg + picmsg3);
+                                }
+
+    if(!(lang === 'ja')){
                                 console.log('Calling QnA Maker...');
-
                                 //質問を分類した物の名前に変換
                                 turnContext.activity.text = msg; //=>画像分類名代入
                                                             
@@ -310,13 +369,17 @@ class QnABot extends ActivityHandler {
                                         console.log("----------------------------------------------------------------------------------");
                                         await this.sendActivity(result[0].translations[0].text); 
                         
-                                    }else if(lang === 'ja'){
-                                            this.sendActivity(str);
                                     }
                                 
-                                } else {
+                                }else {
                                     await this.sendActivity('No QnA Maker answers were found.');
                                 }
+    }else if(lang === 'ja'){
+        turnContext.activity.text = msg; //=>画像分類名代入
+////////////デフォルトのQnAダイアログ//////////////////////////////////////////////////////////////////////////////////////////////
+        await Tdialog.run(turnContext, TdialogState); 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
 
 
 
