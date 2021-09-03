@@ -41,6 +41,11 @@ class RootDialog extends ComponentDialog {
         const dialogSet = new DialogSet(accessor);
         dialogSet.add(this);
 
+        //langのインポート⇒"ja"以外日本語へ変換
+        //出力時の変換が分からず、、、、。
+        //console.log(context.activity.text);///////////////////////////////
+
+
         const dialogContext = await dialogSet.createContext(context);
         const results = await dialogContext.continueDialog();
         if (results.status === DialogTurnStatus.empty) {

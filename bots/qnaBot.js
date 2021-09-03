@@ -134,34 +134,35 @@ class QnABot extends ActivityHandler {
             
      if(!(lang === 'ja')){
             console.log('Calling QnA Maker...');
-                                                    
+                                                   
             //QnAMakerへ検索
             const qnaResults = await QnABot.qnaMaker.getAnswers(context);
-            try {
+            try { 
                 var str = qnaResults[0].answer;
 ////////////////////////////////////////////////マルチターン回答///////////////////////////////////////////////////////////////////////////////////////////
-                //console.log(qnaResults[0].context.prompts[0]);
+               // console.log(qnaResults[0].context);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             }catch(e){
                 console.error("No QnA Maker answers were found.");            
-                var NoAns = "ごめんなさい。分かりませんでした。";
-
-                    if(lang === 'ja'){
-                        context.sendActivity(NoAns);
-                    }else if(!(lang === 'ja')){
-                            
-                    const qs = {
-                        'api-version': '3.0',
-                        'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
-                    }
-                    const body = [{
-                        'text': NoAns
-                    }]
+                var NoAns = "該当なし"; 
+                context.activity.text = NoAns; //=>「該当なし」代入              
+                        //QnAMakerへ検索
+                        const qnaResults = await QnABot.qnaMaker.getAnswers(context);　
+                                                                                                                                                                       
+                        var str = qnaResults[0].answer;                                             
                                                 
-                    var result = await trans.translatorAPI(qs, body);
-                    await context.sendActivity(result[0].translations[0].text);
-                    }
-
+                        // ユーザーへ問い合わせ先を返信                              
+                            const qs = {
+                                'api-version': '3.0',
+                                'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                            }
+                            const body = [{
+                                'text': str
+                            }]
+                                                        
+                            var result = await trans.translatorAPI(qs, body);
+                            await context.sendActivity(result[0].translations[0].text);
+                                        
             }
             // ユーザーへ検索結果を翻訳して返信
              if (qnaResults[0]) {
@@ -315,7 +316,7 @@ class QnABot extends ActivityHandler {
                                     picmsg2 = result2[0].translations[0].text;
                                     picmsg3 = result3[0].translations[0].text;
                                 var picmsg4 = result4[0].translations[0].text;
-                                    await this.sendActivity(picmsg1 + "\r\n" + picmsg2 + picmsg4 + picmsg3);
+                                    await this.sendActivity( picmsg2 + picmsg4 + picmsg3);
                                 }else if(lang ==='ja'){
                                 //初期化
                                 // picmsg1 = "画像を認識しました。";
@@ -368,7 +369,20 @@ class QnABot extends ActivityHandler {
 
          console.log("----------------------------------------------------------------------------------");
             } else {
-                await this.sendActivity('添付ファイルがディスクに正常に保存されませんでした。');
+                if(lang === 'ja'){
+                await this.sendActivity('テキストか画像を送ってください。');
+                }else if(!(lang === 'ja')){
+                    var massage = 'テキストか画像を送ってください。';
+                    const qs = {
+                        'api-version': '3.0',
+                        'to': [lang]   //ポルトガル語、日本語、英語の中から選択した言語に翻訳
+                    }
+                    const body = [{
+                        'text': massage
+                    }]                                                                
+                    var result = await trans.translatorAPI(qs, body);
+                    await this.sendActivity(result[0].translations[0].text);
+                }
             }
         }
    

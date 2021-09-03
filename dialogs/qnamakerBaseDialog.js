@@ -12,7 +12,8 @@ const {
 // Default parameters
 const DefaultThreshold = 0.3;
 const DefaultTopN = 3;
-const DefaultNoAnswer = 'No QnAMaker answers found.';
+const DefaultNoAnswer = 'どのようなゴミなのか確認できませんでした。\r\n お手数おかけしますが、以下記載の宛先までお問合わせいただくか、リンク先の資料をご確認ください。\r\n ■問い合せ先 \r\n 袋井市環境政策課 \r\n　住所 袋井市新屋一丁目1番地の1　\r\n　TEL 0538－44－3115（直通）\r\n ■資料 \r\n' +'https://www.city.fukuroi.shizuoka.jp/material/files/group/52/H28gomigaido.pdf';
+
 
 // Card parameters
 const DefaultCardTitle = 'Did you mean:';
@@ -28,7 +29,7 @@ class QnAMakerBaseDialog extends QnAMakerDialog {
      * @param {QnAMaker} qnaService A QnAMaker service object.
      */
     constructor(knowledgebaseId, authkey, host) {
-        var noAnswer = ActivityFactory.DefaultNoAnswer;
+        var noAnswer = DefaultNoAnswer;
         var filters = [];
         super(knowledgebaseId, authkey, host, noAnswer, DefaultThreshold, DefaultCardTitle, DefaultCardNoMatchText,
             DefaultTopN, ActivityFactory.cardNoMatchResponse, filters, QNAMAKER_BASE_DIALOG);
