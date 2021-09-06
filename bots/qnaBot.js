@@ -472,7 +472,7 @@ class QnABot extends ActivityHandler {
                                     }
                                   }
                                   msg = classes[result.label];
-                                  console.log(msg);
+                                  //console.log(msg);
                                   
 
                                   console.log(result.label);
