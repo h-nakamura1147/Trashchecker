@@ -143,8 +143,16 @@ class QnABot extends ActivityHandler {
                // console.log(qnaResults[0].context);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             }catch(e){
-                console.error("No QnA Maker answers were found.");            
-                var NoAns = "該当なし"; 
+                console.error("No QnA Maker answers were found.");
+                if(lang==='ja'){            
+                    var NoAns = "該当なし";
+                }else if(lang==='en'){
+                    var NoAns = "該当なしen";   
+                }else if(lang==='pt'){
+                    var NoAns = "該当なしpt";   
+                }else{
+                    var NoAns = "該当なし";  
+                } 
                 context.activity.text = NoAns; //=>「該当なし」代入              
                         //QnAMakerへ検索
                         const qnaResults = await QnABot.qnaMaker.getAnswers(context);　
