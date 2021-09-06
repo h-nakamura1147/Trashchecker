@@ -460,22 +460,25 @@ class QnABot extends ActivityHandler {
 
                                   const classes =["該当なし","乾電池","ビン","ペットボトル"];
                               　　　
-                                  if(result.label == 0){
+
+                                  msg = classes[result.label];
+
+                                  if(msg === '該当なし'){
                                     if(lang==='ja'){            
-                                        classes[result.label] = "該当なし";
+                                        msg = "該当なし";
                                     }else if(lang==='en'){
-                                        classes[result.label] = "該当なしen";   
+                                        msg = "該当なしen";   
                                     }else if(lang==='pt'){
-                                        classes[result.label] = "該当なしpt";   
-                                    }else{
-                                        classes[result.label] = "該当なし";  
+                                        msg = "該当なしpt";   
                                     }
                                   }
-                                  msg = classes[result.label];
+
+
+
                                   //console.log(msg);
                                   
 
-                                  console.log(result.label);
+                                 // console.log(result.label);
 
                              console.log('result--------------3',msg);
                         }
