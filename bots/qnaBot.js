@@ -459,8 +459,8 @@ class QnABot extends ActivityHandler {
                                   const result = await classifier.predictClass(activation);
 
                                   const classes =["該当なし","乾電池","ビン","ペットボトル"];
-                              
-                                  if(result.label = 0){
+                              　　　
+                                  if(result.label == 0){
                                     if(lang==='ja'){            
                                         classes[result.label] = "該当なし";
                                     }else if(lang==='en'){
