@@ -1,7 +1,7 @@
 // Copyright（c）MicrosoftCorporation。 全著作権所有。
 // MITライセンスの下でライセンスされています。 
 //-------------------------------------------------------------宣言-----------------------------------------------------------------------
-const { ActivityHandler,ActionTypes,MessageFactory} = require('botbuilder');
+const { ActivityHandler,ActionTypes,MessageFactory,ConversationState,UserState} = require('botbuilder');
 const { QnAMaker } = require('botbuilder-ai');
 const path = require('path');
 const axios = require('axios');
@@ -12,14 +12,15 @@ const mobilenet =require("@tensorflow-models/mobilenet");
 var msg="";
 //翻訳系
 const {Translator}  = require('../TranslatorClass');
+const { getHeapSpaceStatistics } = require('v8');
+const { type } = require('os');
 trans = new Translator();
 var cnt = 0;
 var Language = "";
 var lang = "";
-var TconversationState = "";
-var TuserState = "";
 var Tdialog = "";
 var TdialogState = "";
+
 //---------------------------------------------------------------終-------------------------------------------------------------------------
 /**
   * QnAMakerからの回答で発話に応答するシンプルなボット。
@@ -32,6 +33,7 @@ class QnABot extends ActivityHandler {
      * @param {UserState} userState
      * @param {Dialog} dialog
      */
+     
     constructor(conversationState, userState, dialog) {
         super();
 
@@ -43,12 +45,11 @@ class QnABot extends ActivityHandler {
         this.userState = userState;
         this.dialog = dialog;
         this.dialogState = this.conversationState.createProperty('DialogState');
-
         
-        TconversationState = conversationState;
-        TuserState = userState;
+    
         Tdialog = dialog;
         TdialogState = this.conversationState.createProperty('DialogState');
+
 
         this.onMessage(async (context, next) => {
 
@@ -60,9 +61,14 @@ class QnABot extends ActivityHandler {
             else if(currentLang ==="pt"){lang ="pt",Language="ポルトガル語"}//ポルトガル語
             else if(currentLang ==="ja"){lang = "ja",Language="日本語"}//日本語
             else {lang = "ja",Language="日本語";}
+        　　var　AAA = lang; 
+
+
+
+
             var start1 = Language + "に設定しました。";
             var start2　= "捨てたいゴミを名前か写真で教えてください。";
-
+            
                 //日本語じゃない場合
             if (!(lang === 'ja')) {
 
@@ -98,6 +104,7 @@ class QnABot extends ActivityHandler {
             }
             console.log("lang : "+lang);
 
+            
 
         // 添付ファイルを確認して、ボットがメッセージを処理する方法を決定します。
         if (context.activity.attachments && context.activity.attachments.length > 0) {
@@ -153,6 +160,7 @@ class QnABot extends ActivityHandler {
                 }else{
                     var NoAns = "該当なし";  
                 } 
+                console.log(NoAns);
                 context.activity.text = NoAns; //=>「該当なし」代入              
                         //QnAMakerへ検索
                         const qnaResults = await QnABot.qnaMaker.getAnswers(context);　
@@ -193,7 +201,7 @@ class QnABot extends ActivityHandler {
             }
     }else if(lang === 'ja'){
 ////////////デフォルトのQnAダイアログ//////////////////////////////////////////////////////////////////////////////////////////////
-        await this.dialog.run(context, this.dialogState); 
+        await this.dialog.run(context, this.dialogState);
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
@@ -204,6 +212,7 @@ class QnABot extends ActivityHandler {
            // next（）を呼び出すことにより、次のBotHandlerが実行されるようにします。
             await next();
         });
+        
 
         //新しいユーザーが会話に追加された場合は、挨拶メッセージを送信します
         this.onMembersAdded(async (context, next) => {
@@ -241,7 +250,7 @@ class QnABot extends ActivityHandler {
         });
     }
 
-    
+
     /**
      * Saves incoming attachments to disk by calling `this.downloadAttachmentAndWrite()` and
      * responds to the user with information about the saved attachment or an error.
@@ -458,7 +467,7 @@ class QnABot extends ActivityHandler {
 
                                   const result = await classifier.predictClass(activation);
 
-                                  const classes =["該当なし","乾電池","ビン","ペットボトル"];
+                                  const classes =["000000000","乾電池","ビン","ペットボトル"];
                               　　　
 
                                   msg = classes[result.label];
@@ -473,7 +482,7 @@ class QnABot extends ActivityHandler {
                                     }
                                   }
 
-
+*/
 
                                   //console.log(msg);
                                   
@@ -512,9 +521,10 @@ class QnABot extends ActivityHandler {
         await this.conversationState.saveChanges(context, false);
         await this.userState.saveChanges(context, false);
     }
+    
 }
 
-
+module.exports = {a: lang};
 module.exports.QnABot = QnABot;
 
 // SIG // Begin signature block
