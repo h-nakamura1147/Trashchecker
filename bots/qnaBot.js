@@ -472,7 +472,8 @@ class QnABot extends ActivityHandler {
 
                                   msg = classes[result.label];
 
-                                  if(msg === '該当なし'){
+/* 
+                                 if(msg === '該当なし'){
                                     if(lang==='ja'){            
                                         msg = "該当なし";
                                     }else if(lang==='en'){
